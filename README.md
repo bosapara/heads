@@ -1,4 +1,4 @@
-# heads
+# Heads 2.0
 
 "Bring Me The Head Mod" by thefamilygrog66
 
