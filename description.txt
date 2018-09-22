@@ -1,0 +1,6 @@
+"Bring Me The Head Mod" by thefamilygrog66
+Modified by Jozet
+
+Mod provide simple possibility to add endless quantity of heads, depends on your skins mod
+
+An example if your skin mod has 129 skins, so heads mod will use all this skin textures (edit init.lua before using) 
