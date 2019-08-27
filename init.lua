@@ -40,11 +40,28 @@ for i = 1, headnumber do
 		groups = {snappy=1,choppy=2,oddly_breakable_by_hand=2,flammable=3},
 	    drop = "heads:head_"..i,
 	    on_rightclick = function(pos, node, clicker)
-	        node.name = "heads:head_"..x
+	        
+			if clicker and not minetest.check_player_privs(clicker, "protection_bypass") then
+				local name = clicker:get_player_name()
+				if minetest.is_protected(pos, name) then
+					minetest.record_protection_violation(pos, name)
+					return
+				end
+			end			
+			node.name = "heads:head_"..x
 	        minetest.env:set_node(pos, node)
-
+			
 	    end,
 	    on_punch = function (pos, node, puncher)
+
+			if puncher and not minetest.check_player_privs(puncher, "protection_bypass") then
+				local name = puncher:get_player_name()
+				if minetest.is_protected(pos, name) then
+					minetest.record_protection_violation(pos, name)
+					return
+				end
+			end		
+		
 	        node.name = "heads:head_"..y
 	        minetest.set_node(pos, node)
 
@@ -54,9 +71,6 @@ for i = 1, headnumber do
 end
 
 -- register head craft
-
-
-
 
 minetest.register_craft({
 	output = "heads:head_1",
