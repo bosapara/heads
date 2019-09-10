@@ -2,8 +2,6 @@
 
 headnumber = 129
 
--- register head nodes
-
 for i = 1, headnumber do
 
 	local x = i + 1
@@ -13,6 +11,7 @@ for i = 1, headnumber do
 
 	minetest.register_node("heads:head_"..i, {
 	    description = "Head Number "..i,
+		wield_scale = {x=1.5, y=1.5, z=1.5},
 	    drawtype = "nodebox",
 	    tiles = {
 			"[combine:16x16:-4,4=character_"..i..".png",--top
@@ -39,45 +38,48 @@ for i = 1, headnumber do
 	    },
 		groups = {snappy=1,choppy=2,oddly_breakable_by_hand=2,flammable=3},
 	    drop = "heads:head_"..i,
-	    on_rightclick = function(pos, node, clicker)
-	        
-			if clicker and not minetest.check_player_privs(clicker, "protection_bypass") then
-				local name = clicker:get_player_name()
-				if minetest.is_protected(pos, name) then
-					minetest.record_protection_violation(pos, name)
-					return
-				end
-			end			
-			node.name = "heads:head_"..x
-	        minetest.env:set_node(pos, node)
-			
-	    end,
-	    on_punch = function (pos, node, puncher)
-
-			if puncher and not minetest.check_player_privs(puncher, "protection_bypass") then
-				local name = puncher:get_player_name()
-				if minetest.is_protected(pos, name) then
-					minetest.record_protection_violation(pos, name)
-					return
-				end
-			end		
 		
-	        node.name = "heads:head_"..y
-	        minetest.set_node(pos, node)
+		after_place_node = function(pos, placer, itemstack)
 
-	    end,
+			local item = placer:get_wielded_item():to_string()		
+			local meta = ItemStack(item):get_meta()
+			local some_meta = meta:get_string("description")			
+
+			local meta2 = minetest.get_meta(pos)
+			meta2:set_string("description", some_meta)
+			meta2:set_string("infotext", some_meta)
+
+		end,
+
+		after_dig_node = function(pos, oldnode, oldmetadata, digger)
+
+			local meta = minetest.get_meta(pos)
+			local description = meta:get_string("description")
+			
+			local stack = ItemStack(oldnode.name)
+			local meta2 = stack:get_meta()
+			meta2:set_string("description", description)
+
+			minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)
+
+		end,	
+		
 	})
 	
 end
 
--- register head craft
 
-minetest.register_craft({
-	output = "heads:head_1",
-	recipe = {
-		{"default:tree","default:leaves","default:tree"},
-		{"default:leaves","default:goldblock","default:leaves"},
-		{"default:tree","default:leaves","default:tree"},
-		
-	}
-})
+minetest.register_on_dieplayer(function(player)
+	
+	local name = player:get_player_name()
+	local pos = vector.round(player:getpos())
+	local skin_num = string.match(skins.skins[name],"%d+")
+
+	local stack = ItemStack("heads:head_"..skin_num)
+	local meta = stack:get_meta()
+	meta:set_string("description", "Head of "..name)
+
+	minetest.sound_play("head_drop", {pos, gain = 1.0, })	
+	minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)
+
+end)

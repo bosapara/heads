@@ -1,1 +1,2 @@
-bones
+default
+simple_skins?
