@@ -4,11 +4,6 @@ headnumber = 129
 
 for i = 1, headnumber do
 
-	local x = i + 1
-	local y = i - 1
-	if x > headnumber then x = 1 end
-	if y < 1 then y = headnumber end
-
 	minetest.register_node("heads:head_"..i, {
 	    description = "Head Number "..i,
 		wield_scale = {x=1.5, y=1.5, z=1.5},
@@ -37,8 +32,9 @@ for i = 1, headnumber do
 	        fixed = { -0.25, -0.5, -0.25, 0.25, 0.0, 0.25, },
 	    },
 		groups = {snappy=1,choppy=2,oddly_breakable_by_hand=2,flammable=3},
-	    drop = "heads:head_"..i,
-		
+		sounds = default.node_sound_wood_defaults(),
+	    drop = "",
+		stack_max = 1,
 		after_place_node = function(pos, placer, itemstack)
 
 			local item = placer:get_wielded_item():to_string()		
@@ -53,15 +49,22 @@ for i = 1, headnumber do
 
 		after_dig_node = function(pos, oldnode, oldmetadata, digger)
 
+			if not digger then return end
+
 			local meta = minetest.get_meta(pos)
+			meta:from_table(oldmetadata)
 			local description = meta:get_string("description")
 			
 			local stack = ItemStack(oldnode.name)
 			local meta2 = stack:get_meta()
 			meta2:set_string("description", description)
-
-			minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)
-
+		
+			if digger:get_inventory():room_for_item("main", stack) then
+				digger:get_inventory():add_item('main', stack)
+			else			
+				minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)				
+			end
+			
 		end,	
 		
 	})
@@ -69,17 +72,41 @@ for i = 1, headnumber do
 end
 
 
-minetest.register_on_dieplayer(function(player)
-	
-	local name = player:get_player_name()
+minetest.register_on_punchplayer(function(player, hitter, _, _, _, damage)
+	if not (hitter and hitter:is_player()) then
+		return 
+	end
+
+	local hp = player:get_hp()
+	if hp - damage > 0 or hp <= 0 then
+		return 
+	end
+
+	local hitter_name = hitter:get_player_name()
+	local player_name = player:get_player_name()
+
+	local item = hitter:get_wielded_item():to_string()
+
+	local name = player_name
+
 	local pos = vector.round(player:getpos())
 	local skin_num = string.match(skins.skins[name],"%d+")
 
 	local stack = ItemStack("heads:head_"..skin_num)
 	local meta = stack:get_meta()
-	meta:set_string("description", "Head of "..name)
-
-	minetest.sound_play("head_drop", {pos, gain = 1.0, })	
-	minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)
-
+	
+	local rand
+	
+	rand = math.random(1,100)
+	
+	if string.match(item, "sword") and rand < 20 then
+		--minetest.chat_send_all("*** Server: "..hitter_name.." killed " .. player_name ..""..item)
+	   	   
+		meta:set_string("description", "Head of "..name)
+		minetest.sound_play("head_drop", {pos, gain = 1.0, })	
+		minetest.add_item({x = pos.x, y = pos.y + 1, z = pos.z}, stack)   
+   
+	end
+ 
+    
 end)
